@@ -1,0 +1,2 @@
+PatientID,CourseID,PlanID,FractionNumber,TreatmentDate,MachineName,DeliveredMU,Status
+PSEUDO001,C1,PLAN_A,1,2026-01-02,VersaHD-01,412.5,Treated

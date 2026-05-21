@@ -1,0 +1,8 @@
+listen_addresses = '127.0.0.1'
+port = 5432
+max_connections = 100
+shared_buffers = 256MB
+log_destination = 'stderr'
+logging_collector = on
+log_directory = 'log'
+log_filename = 'postgresql-%Y-%m-%d.log'

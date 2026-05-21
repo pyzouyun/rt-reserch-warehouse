@@ -1,0 +1,2 @@
+PatientID,Sex,BirthYear,DiagnosisCode,DiagnosisText
+PSEUDO001,F,1965,C50.9,Breast malignant neoplasm

@@ -1,0 +1,139 @@
+services:
+  orthanc:
+    image: orthancteam/orthanc:24.12.3
+    container_name: rt_research_orthanc
+    restart: unless-stopped
+    ports:
+      - "${ORTHANC_DICOM_PORT:-4242}:4242"
+      - "${ORTHANC_HTTP_PORT:-8042}:8042"
+    environment:
+      ORTHANC__NAME: "RT_RESEARCH"
+      ORTHANC__DICOM_AET: "RT_RESEARCH"
+      ORTHANC__DICOM_PORT: "4242"
+      ORTHANC__HTTP_PORT: "8042"
+      ORTHANC__REMOTE_ACCESS_ALLOWED: "true"
+      ORTHANC__AUTHENTICATION_ENABLED: "true"
+      ORTHANC__REGISTERED_USERS: "{\"${ORTHANC_USERNAME:-orthanc}\":\"${ORTHANC_PASSWORD:?set ORTHANC_PASSWORD in .env}\"}"
+      ORTHANC__STORAGE_DIRECTORY: "/var/lib/orthanc/db"
+      ORTHANC__INDEX_DIRECTORY: "/var/lib/orthanc/db"
+      ORTHANC__SAVE_JOBS: "true"
+      ORTHANC__OVERWRITE_INSTANCES: "false"
+    volumes:
+      - orthanc-storage:/var/lib/orthanc/db
+    networks:
+      - rt-research
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: rt_research_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-rt_research}
+      POSTGRES_USER: ${POSTGRES_USER:-rt_research}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rt_research} -d ${POSTGRES_DB:-rt_research}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rt-research
+
+  pgadmin:
+    image: dpage/pgadmin4:8.14
+    container_name: rt_research_pgadmin
+    restart: unless-stopped
+    profiles: ["tools"]
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:?set PGADMIN_DEFAULT_PASSWORD in .env}
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - rt-research
+
+  etl:
+    image: rt-research/etl:0.1.1
+    build:
+      context: .
+      dockerfile: etl/Dockerfile
+    container_name: rt_research_etl
+    profiles: ["etl"]
+    environment:
+      ORTHANC_URL: http://orthanc:8042
+      ORTHANC_USERNAME: ${ORTHANC_USERNAME:-orthanc}
+      ORTHANC_PASSWORD: ${ORTHANC_PASSWORD:?set ORTHANC_PASSWORD in .env}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-rt_research}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-rt_research}
+      DEIDENTIFY_SALT: ${DEIDENTIFY_SALT:?set DEIDENTIFY_SALT in .env}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      MOSAIQ_CSV_DIR: /app/data_templates
+    volumes:
+      - ./etl:/app/etl:ro
+      - ./data_templates:/app/data_templates:ro
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      orthanc:
+        condition: service_started
+    networks:
+      - rt-research
+
+  api:
+    image: rt-research/api:0.1.1
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: rt_research_api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-rt_research}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-rt_research}
+      ORTHANC_URL: http://orthanc:8042
+      ORTHANC_USERNAME: ${ORTHANC_USERNAME:-orthanc}
+      ORTHANC_PASSWORD: ${ORTHANC_PASSWORD:?set ORTHANC_PASSWORD in .env}
+      DEIDENTIFY_SALT: ${DEIDENTIFY_SALT:?set DEIDENTIFY_SALT in .env}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ETL_WORKDIR: /app
+      API_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost:5173,http://localhost:8080}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      orthanc:
+        condition: service_started
+    networks:
+      - rt-research
+
+  web:
+    image: rt-research/web:0.1.1
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    container_name: rt_research_web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      - api
+    networks:
+      - rt-research
+
+volumes:
+  orthanc-storage:
+  postgres-data:
+  pgadmin-data:
+
+networks:
+  rt-research:
+    driver: bridge

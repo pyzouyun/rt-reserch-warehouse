@@ -1,0 +1,2 @@
+PatientID,CourseID,WorkflowStep,Status,ScheduledDate,CompletedDate,OwnerRole
+PSEUDO001,C1,CT simulation,Completed,2025-12-28,2025-12-28,Therapist

@@ -1,0 +1,16 @@
+{
+  "Name": "RT_RESEARCH",
+  "DicomAet": "RT_RESEARCH",
+  "DicomPort": 4242,
+  "HttpPort": 8042,
+  "RemoteAccessAllowed": true,
+  "AuthenticationEnabled": true,
+  "RegisteredUsers": {},
+  "StorageDirectory": "/var/lib/orthanc/db",
+  "IndexDirectory": "/var/lib/orthanc/db",
+  "SaveJobs": true,
+  "OverwriteInstances": false,
+  "HttpDescribeErrors": true,
+  "DicomModalities": {},
+  "OrthancPeers": {}
+}
