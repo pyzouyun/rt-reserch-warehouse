@@ -1,0 +1,9 @@
+services:
+  etl:
+    image: rt-research/etl:0.1.1
+
+  api:
+    image: rt-research/api:0.1.1
+
+  web:
+    image: rt-research/web:0.1.1

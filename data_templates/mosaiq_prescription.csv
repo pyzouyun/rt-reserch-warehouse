@@ -1,0 +1,2 @@
+PatientID,CourseID,PlanID,PrescriptionDoseGy,Fractions,DosePerFractionGy,Site,Technique
+PSEUDO001,C1,PLAN_A,50,25,2,Breast,VMAT

@@ -1,0 +1,18 @@
+{
+  "Name": "RT_RESEARCH",
+  "DicomAet": "RT_RESEARCH",
+  "DicomPort": 4242,
+  "HttpPort": 8042,
+  "RemoteAccessAllowed": true,
+  "AuthenticationEnabled": true,
+  "RegisteredUsers": {
+    "{{ORTHANC_USERNAME}}": "{{ORTHANC_PASSWORD}}"
+  },
+  "StorageDirectory": "{{INSTALL_DIR}}/data/orthanc/storage",
+  "IndexDirectory": "{{INSTALL_DIR}}/data/orthanc/index",
+  "SaveJobs": true,
+  "OverwriteInstances": false,
+  "HttpDescribeErrors": true,
+  "DicomModalities": {},
+  "OrthancPeers": {}
+}
