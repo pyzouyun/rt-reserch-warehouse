@@ -1,5 +1,6 @@
 import {
   Activity,
+  BarChart3,
   ClipboardPlus,
   Database,
   FileHeart,
@@ -23,9 +24,11 @@ import {
   type ClinicalOutcomeInput,
   type CollectionResponse,
   type CommandResult,
+  type CohortSummary,
   type DashboardSummary,
   type DataResponse,
   type DicomSeriesRow,
+  type ImagingSummary,
   type EtlLog,
   type FractionInput,
   type ImageArchiveRow,
@@ -34,6 +37,7 @@ import {
   type PatientDetail,
   type PatientRow,
   type PatientResearchState,
+  type PrescriptionDistribution,
   type RtObjectRow,
   type WorkflowInput,
   apiDelete,
@@ -57,10 +61,11 @@ import {
 } from "./components";
 import { useAsyncData } from "./hooks";
 
-type PageKey = "dashboard" | "patients" | "dicom" | "xvi" | "rt" | "mosaiq" | "outcomes" | "etl" | "security";
+type PageKey = "dashboard" | "statistics" | "patients" | "dicom" | "xvi" | "rt" | "mosaiq" | "outcomes" | "etl" | "security";
 
 const navItems: Array<{ key: PageKey; label: string; icon: typeof Gauge }> = [
   { key: "dashboard", label: "总览", icon: Gauge },
+  { key: "statistics", label: "统计", icon: BarChart3 },
   { key: "patients", label: "患者索引", icon: Users },
   { key: "dicom", label: "DICOM", icon: HardDrive },
   { key: "xvi", label: "XVI/CBCT", icon: Images },
@@ -120,6 +125,7 @@ export function App() {
           </div>
         </header>
         {page === "dashboard" && <DashboardPage />}
+        {page === "statistics" && <StatisticsPage />}
         {page === "patients" && <PatientsPage />}
         {page === "dicom" && <DicomPage />}
         {page === "xvi" && <XviPage />}
@@ -176,6 +182,128 @@ function DashboardPage() {
       </Section>
     </div>
   );
+}
+
+function StatisticsPage() {
+  const cohort = useAsyncData(() => fetchJson<DataResponse<CohortSummary>>("/statistics/cohort-summary"), []);
+  const prescriptions = useAsyncData(
+    () => fetchJson<DataResponse<PrescriptionDistribution>>("/statistics/prescription-distribution"),
+    [],
+  );
+  const imaging = useAsyncData(() => fetchJson<DataResponse<ImagingSummary>>("/statistics/imaging-summary"), []);
+  const cohortData = cohort.data?.data;
+  const prescriptionData = prescriptions.data?.data;
+  const imagingData = imaging.data?.data;
+  const busy = cohort.loading || prescriptions.loading || imaging.loading;
+
+  function refreshAll() {
+    void cohort.refetch();
+    void prescriptions.refetch();
+    void imaging.refetch();
+  }
+
+  function exportPatientsCsv() {
+    window.location.href = "/api/v1/export/patients-csv";
+  }
+
+  return (
+    <div className="page-grid">
+      <Section
+        title="队列概览"
+        actions={
+          <div className="toolbar">
+            <ActionButton onClick={exportPatientsCsv}>
+              <FileInput size={15} />
+              导出患者 CSV
+            </ActionButton>
+            <RefreshButton onClick={refreshAll} loading={busy} />
+          </div>
+        }
+      >
+        <StateBlock loading={cohort.loading} error={cohort.error} />
+        <div className="metrics-grid">
+          <Metric label="患者总数" value={cohortData?.patient_count ?? 0} />
+          <Metric label="年龄中位数" value={formatSummaryValue(cohortData?.age_summary.median)} />
+          <Metric label="分次数中位数" value={formatSummaryValue(cohortData?.fraction_summary.median)} />
+          <Metric label="CBCT 中位数" value={formatSummaryValue(cohortData?.cbct_summary.median)} />
+          <Metric label="计划 CT 中位数" value={formatSummaryValue(cohortData?.planning_ct_summary.median)} />
+        </div>
+      </Section>
+
+      <Section title="患者基础分布">
+        <DataTable
+          rows={[
+            ...(cohortData?.sex_distribution ?? []).map((row) => ({ group: "性别", ...row })),
+            ...(cohortData?.research_states.cohort_tags ?? []).map((row) => ({ group: "队列标签", ...row })),
+            ...(cohortData?.research_states.inclusion_status ?? []).map((row) => ({ group: "入组状态", ...row })),
+            ...(cohortData?.research_states.review_status ?? []).map((row) => ({ group: "审核状态", ...row })),
+          ]}
+          columns={[
+            { key: "group", label: "分组" },
+            { key: "label", label: "取值" },
+            { key: "count", label: "数量" },
+          ]}
+        />
+      </Section>
+
+      <Section title="处方与治疗分布">
+        <DataTable
+          rows={(prescriptionData?.prescription_schemes ?? []) as Array<Record<string, unknown>>}
+          columns={[
+            { key: "treatment_site", label: "部位" },
+            { key: "technique", label: "技术" },
+            { key: "prescription_dose_gy", label: "总剂量 Gy" },
+            { key: "fractions", label: "分次数" },
+            { key: "patient_count", label: "患者数" },
+          ]}
+        />
+      </Section>
+
+      <Section title="技术、设备与影像">
+        <div className="split-grid">
+          <DataTable
+            rows={[
+              ...(prescriptionData?.techniques ?? []).map((row) => ({ group: "技术", ...row })),
+              ...(prescriptionData?.treatment_sites ?? []).map((row) => ({ group: "部位", ...row })),
+              ...(imagingData?.by_role ?? []).map((row) => ({ group: "影像角色", ...row })),
+              ...(imagingData?.by_source ?? []).map((row) => ({ group: "来源系统", ...row })),
+            ]}
+            columns={[
+              { key: "group", label: "分组" },
+              { key: "label", label: "取值" },
+              { key: "count", label: "数量" },
+            ]}
+          />
+          <DataTable
+            rows={(prescriptionData?.machines ?? []) as Array<Record<string, unknown>>}
+            columns={[
+              { key: "machine_name", label: "设备" },
+              { key: "fraction_count", label: "分次数" },
+              { key: "patient_count", label: "患者数" },
+            ]}
+          />
+        </div>
+      </Section>
+
+      <Section title="患者影像归档概览">
+        <DataTable
+          rows={(imagingData?.per_patient ?? []) as Array<Record<string, unknown>>}
+          columns={[
+            { key: "research_patient_id", label: "研究 ID" },
+            { key: "planning_ct_count", label: "计划 CT" },
+            { key: "cbct_count", label: "CBCT" },
+            { key: "unknown_ct_count", label: "未知 CT" },
+            { key: "latest_acquisition_date", label: "最近采集日期" },
+          ]}
+        />
+      </Section>
+    </div>
+  );
+}
+
+function formatSummaryValue(value?: number | null) {
+  if (value === null || value === undefined) return "-";
+  return Number(value).toFixed(1).replace(/\.0$/, "");
 }
 
 function PatientsPage() {

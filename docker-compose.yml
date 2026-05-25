@@ -63,7 +63,7 @@ services:
       - rt-research
 
   etl:
-    image: rt-research/etl:0.1.1
+    image: rt-research/etl:0.2.0
     build:
       context: .
       dockerfile: etl/Dockerfile
@@ -90,7 +90,7 @@ services:
       - rt-research
 
   api:
-    image: rt-research/api:0.1.1
+    image: rt-research/api:0.2.0
     build:
       context: .
       dockerfile: api/Dockerfile
@@ -116,7 +116,7 @@ services:
       - rt-research
 
   web:
-    image: rt-research/web:0.1.1
+    image: rt-research/web:0.2.0
     build:
       context: .
       dockerfile: web/Dockerfile

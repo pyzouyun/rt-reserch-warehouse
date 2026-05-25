@@ -68,9 +68,9 @@ if (-not $SkipImageBuild) {
 
 Write-Step "Saving Docker images"
 $images = @(
-    "rt-research/etl:0.1.1",
-    "rt-research/api:0.1.1",
-    "rt-research/web:0.1.1",
+    "rt-research/etl:0.2.0",
+    "rt-research/api:0.2.0",
+    "rt-research/web:0.2.0",
     "orthancteam/orthanc:24.12.3",
     "postgres:16-alpine",
     "dpage/pgadmin4:8.14"

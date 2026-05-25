@@ -4,7 +4,7 @@
 
 系统不会写回 Monaco、MOSAIQ、XVI 或加速器。所有患者标识进入研究库前都应脱敏。
 
-当前源码版本：`0.1.1-docker`
+当前源码版本：`0.2.0-statistics`
 
 ## 架构
 
@@ -107,10 +107,12 @@ CSV 中不要包含姓名、身份证、电话、住址等直接身份标识。
 - Docker 用户手册：[docs/user_manual_docker.md](docs/user_manual_docker.md)
 - 可视化界面说明：[docs/ui_guide.md](docs/ui_guide.md)
 - XVI/CBCT 归档说明：[docs/xvi_cbct_archive.md](docs/xvi_cbct_archive.md)
+- 统计模块技术设计：[docs/statistics_v0.2_technical_design.md](docs/statistics_v0.2_technical_design.md)
 - 数据库结构：[docs/database_schema.md](docs/database_schema.md)
 - DICOM 流程：[docs/dicom_workflow.md](docs/dicom_workflow.md)
 - 安全与脱敏：[docs/security_and_deidentification.md](docs/security_and_deidentification.md)
-- 当前 Docker 发布说明：[docs/releases/v0.1.1-docker.md](docs/releases/v0.1.1-docker.md)
+- 当前版本发布说明：[docs/releases/v0.2.0-statistics.md](docs/releases/v0.2.0-statistics.md)
+- Docker v0.1.1 发布说明：[docs/releases/v0.1.1-docker.md](docs/releases/v0.1.1-docker.md)
 - Win7/Win10 离线版手册：[docs/user_manual_legacy_windows.md](docs/user_manual_legacy_windows.md)
 
 ## 开发验证

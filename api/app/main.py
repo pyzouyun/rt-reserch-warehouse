@@ -8,7 +8,7 @@ import os
 from typing import Optional
 
 from app.config import get_settings
-from app.routers import dashboard, dicom, etl, health, imports, mosaiq, outcomes, patients, rt, xvi
+from app.routers import dashboard, dicom, etl, export, health, imports, mosaiq, outcomes, patients, rt, statistics, xvi
 
 
 def create_app() -> FastAPI:
@@ -17,7 +17,7 @@ def create_app() -> FastAPI:
     settings = get_settings()
     application = FastAPI(
         title="Radiotherapy Research Data Warehouse API",
-        version="0.1.1",
+        version="0.2.0",
         description="Read-only API for de-identified radiotherapy research data.",
     )
     application.add_middleware(
@@ -34,6 +34,8 @@ def create_app() -> FastAPI:
         dicom.router,
         xvi.router,
         rt.router,
+        statistics.router,
+        export.router,
         mosaiq.router,
         outcomes.router,
         imports.router,

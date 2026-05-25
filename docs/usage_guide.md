@@ -12,7 +12,8 @@
 - DICOM 脱敏：PatientID、StudyInstanceUID、SeriesInstanceUID、SOPInstanceUID 使用 salted hash。
 - XVI CBCT / 计划 CT 归档：按 DICOM Series 建立脱敏归档索引，支持一个患者多个 CBCT 和多个计划 CT。
 - MOSAIQ CSV 导入：通过模板导入患者索引、处方、分次治疗和流程数据。
-- Web 工作台：查看数据资产、DICOM、XVI/CBCT、RT 数据、MOSAIQ、结局和 ETL 日志。
+- Web 工作台：查看数据资产、统计、DICOM、XVI/CBCT、RT 数据、MOSAIQ、结局和 ETL 日志。
+- 统计与导出：查看队列、处方、治疗技术、治疗设备和影像归档统计，并导出脱敏 CSV。
 
 当前仍属于原型版本，不包含生产级权限体系、审计平台、完整 DICOM-RT 字段解析、Elekta 私有日志解析或 AI 训练流水线。
 
@@ -141,6 +142,7 @@ CSV 中不要包含姓名、身份证、电话、住址等直接身份标识。
 ## 7. Web 工作台
 
 - 总览：查看患者、DICOM、RT、分次、影像归档统计。
+- 统计：查看队列概览、患者基础分布、处方/技术/设备分布、患者级 CT/CBCT 归档概览，并导出脱敏患者 CSV。
 - 患者索引：查看详情、编辑研究状态、新增结局。
 - DICOM：浏览 Series。
 - XVI/CBCT：查看计划 CT 和 CBCT 归档。

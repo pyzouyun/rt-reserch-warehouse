@@ -179,6 +179,12 @@ main {
   padding: 14px;
 }
 
+.split-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .metric {
   border: 1px solid #dbe3ea;
   border-radius: 6px;
@@ -493,7 +499,8 @@ select {
   }
 
   .metrics-grid,
-  .security-grid {
+  .security-grid,
+  .split-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -505,7 +512,8 @@ select {
 
 @media (max-width: 560px) {
   .metrics-grid,
-  .security-grid {
+  .security-grid,
+  .split-grid {
     grid-template-columns: 1fr;
   }
 }

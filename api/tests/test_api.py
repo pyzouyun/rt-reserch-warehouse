@@ -235,6 +235,74 @@ def test_xvi_image_archive_endpoints(monkeypatch) -> None:
     assert cbct_response.json()["data"][0]["source_system"] == "XVI"
 
 
+def test_statistics_endpoints_return_research_summaries(monkeypatch) -> None:
+    from app.routers import statistics
+
+    def fake_fetch_one(sql, params):
+        if "count(*) AS patient_count" in sql:
+            return {"patient_count": 3}
+        return {"min": 1, "p25": 1, "median": 2, "p75": 3, "max": 4}
+
+    def fake_fetch_all(sql, params):
+        if "sex" in sql:
+            return [{"label": "F", "count": 2}, {"label": "M", "count": 1}]
+        if "image_role" in sql:
+            return [{"label": "cbct", "count": 5}]
+        return [{"label": "HeadNeck", "count": 3}]
+
+    monkeypatch.setattr(statistics, "fetch_one", fake_fetch_one)
+    monkeypatch.setattr(statistics, "fetch_all", fake_fetch_all)
+
+    cohort = client.get("/api/v1/statistics/cohort-summary")
+    assert cohort.status_code == 200
+    assert cohort.json()["data"]["patient_count"] == 3
+    assert cohort.json()["data"]["sex_distribution"][0]["label"] == "F"
+    assert "cbct_summary" in cohort.json()["data"]
+
+    prescription = client.get("/api/v1/statistics/prescription-distribution")
+    assert prescription.status_code == 200
+    assert "prescription_schemes" in prescription.json()["data"]
+    assert "machines" in prescription.json()["data"]
+
+    imaging = client.get("/api/v1/statistics/imaging-summary")
+    assert imaging.status_code == 200
+    assert imaging.json()["data"]["by_role"][0]["label"] == "cbct"
+
+
+def test_patient_csv_export_returns_deidentified_csv(monkeypatch) -> None:
+    from app.routers import export
+
+    rows = [
+        {
+            "research_patient_id": "RP-1",
+            "sex": "F",
+            "birth_year": 1970,
+            "cohort_tag": "pilot",
+            "inclusion_status": "included",
+            "review_status": "reviewed",
+            "treatment_site": "HeadNeck",
+            "technique": "VMAT",
+            "prescription_dose_gy": 52.5,
+            "fractions": 15,
+            "dose_per_fraction_gy": 3.5,
+            "fraction_count": 15,
+            "planning_ct_count": 1,
+            "cbct_count": 0,
+            "unknown_ct_count": 0,
+        }
+    ]
+    monkeypatch.setattr(export, "fetch_all", lambda sql, params: rows)
+
+    response = client.get("/api/v1/export/patients-csv")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    body = response.text
+    assert "research_patient_id" in body
+    assert "RP-1" in body
+    assert "PatientName" not in body
+
+
 def _metadata(call):
     metadata = call.get("metadata", {})
     if isinstance(metadata, str):

@@ -149,6 +149,46 @@ export interface CommandResult {
   stderr: string;
 }
 
+export interface DistributionRow {
+  label: string;
+  count: number;
+}
+
+export interface NumericSummary {
+  min?: number | null;
+  p25?: number | null;
+  median?: number | null;
+  p75?: number | null;
+  max?: number | null;
+}
+
+export interface CohortSummary {
+  patient_count: number;
+  sex_distribution: DistributionRow[];
+  age_summary: NumericSummary;
+  research_states: {
+    cohort_tags: DistributionRow[];
+    inclusion_status: DistributionRow[];
+    review_status: DistributionRow[];
+  };
+  fraction_summary: NumericSummary;
+  cbct_summary: NumericSummary;
+  planning_ct_summary: NumericSummary;
+}
+
+export interface PrescriptionDistribution {
+  prescription_schemes: Record<string, unknown>[];
+  techniques: DistributionRow[];
+  treatment_sites: DistributionRow[];
+  machines: Record<string, unknown>[];
+}
+
+export interface ImagingSummary {
+  by_role: DistributionRow[];
+  by_source: DistributionRow[];
+  per_patient: Record<string, unknown>[];
+}
+
 export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     headers: { "Content-Type": "application/json" },
