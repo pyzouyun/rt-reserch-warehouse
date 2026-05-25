@@ -35,6 +35,40 @@ def upsert_parsed_dicom(connection: Connection, parsed: ParsedDicom) -> None:
         _upsert_image_archive(connection, parsed, series_pk)
 
 
+def promote_contextual_planning_ct(connection: Connection) -> int:
+    """Promote CT archive rows to planning CT when their study has RT context."""
+
+    result = connection.execute(
+        text(
+            """
+            UPDATE image_archive ia
+            SET
+                image_role = 'planning_ct',
+                source_system = CASE
+                    WHEN ia.source_system = 'Unknown' THEN 'Monaco'
+                    ELSE ia.source_system
+                END,
+                metadata = ia.metadata || '{"classification_reason": "rt_context"}'::jsonb,
+                updated_at = now()
+            FROM dicom_series ct_series
+            WHERE ia.dicom_series_id = ct_series.id
+              AND ia.image_role = 'unknown_ct'
+              AND EXISTS (
+                  SELECT 1
+                  FROM dicom_series rt_series
+                  JOIN dicom_instance rt_instance ON rt_instance.dicom_series_id = rt_series.id
+                  LEFT JOIN rt_plan rp ON rp.dicom_instance_id = rt_instance.id
+                  LEFT JOIN rt_structure rs ON rs.dicom_instance_id = rt_instance.id
+                  LEFT JOIN rt_dose rd ON rd.dicom_instance_id = rt_instance.id
+                  WHERE rt_series.dicom_study_id = ct_series.dicom_study_id
+                    AND (rp.id IS NOT NULL OR rs.id IS NOT NULL OR rd.id IS NOT NULL)
+              )
+            """
+        )
+    )
+    return int(result.rowcount or 0)
+
+
 def log_etl_event(
     connection: Connection,
     *,

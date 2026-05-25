@@ -10,7 +10,7 @@ import pydicom
 
 from etl.config import get_settings
 from etl.db import db_connection
-from etl.load_to_db import log_etl_event, upsert_parsed_dicom
+from etl.load_to_db import log_etl_event, promote_contextual_planning_ct, upsert_parsed_dicom
 from etl.orthanc_client import OrthancClient
 from etl.parse_dicom import parse_dataset
 
@@ -47,11 +47,15 @@ def run() -> int:
                     processed += 1
                 except Exception as exc:
                     logger.exception("Failed to process Orthanc instance %s: %s", instance_id, exc)
+            promoted = promote_contextual_planning_ct(connection)
             log_etl_event(
                 connection,
                 pipeline_name="orthanc_dicom_scan",
                 status="success",
-                message=f"Processed {processed} of {len(instance_ids)} Orthanc instances",
+                message=(
+                    f"Processed {processed} of {len(instance_ids)} Orthanc instances; "
+                    f"promoted {promoted} CT series by RT study context"
+                ),
                 records_processed=processed,
             )
         return 0
